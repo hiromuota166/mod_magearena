@@ -65,35 +65,36 @@ public class WhisperRecognitionManager {
         microphone.start();
 
         listeningThread = new Thread(() -> {
-            // whisper用の受け皿
             List<Float> audioBuffer = new ArrayList<>();
-            // マイクの受け皿
             byte[] readBuffer = new byte[4096];
 
             while (isListening) {
                 int nbytes = microphone.read(readBuffer, 0, readBuffer.length);
                 if (nbytes > 0) {
-                    // readBufferから2バイト取り出す
-                    // それをshortの数値に合成する
-                    // 32768.0fで割って-1.0~1.0の範囲のfloatにする
-                    // それをaudioBufferに投げ入れる
-                    for (int i = 0; i < nbytes; i += 2) {
-                        short s = ByteBuffer.wrap(readBuffer, i, 2).order(ByteOrder.LITTLE_ENDIAN).getShort();
-                        audioBuffer.add(s / 32768.0f);
+                    // 音量計算
+                    double sum = 0;
+                    int sampleCount = nbytes / 2;
+                    short[] tempSamples = new short[sampleCount];
+                    ByteBuffer.wrap(readBuffer, 0, nbytes).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().get(tempSamples);
+
+                    for (short s : tempSamples) sum += s * s;
+                    double rms = Math.sqrt(sum / sampleCount);
+
+                    // しきい値を超えた時だけ追加
+                    if (rms > 300) {
+                        for (short s : tempSamples) {
+                            audioBuffer.add(s / 32768.0f);
+                        }
                     }
 
-                    // 約3秒溜まったら解析
                     if (audioBuffer.size() >= 48000) {
                         float[] samples = new float[audioBuffer.size()];
                         for (int i = 0; i < audioBuffer.size(); i++) samples[i] = audioBuffer.get(i);
 
                         try {
-                            // 提供されたWhisperCpp.javaに合わせて getFullDefaultParams を使用
-                            // 戻り値は WhisperFullParams.ByValue である必要がある
                             WhisperFullParams.ByValue params = whisper.getFullDefaultParams(WhisperSamplingStrategy.WHISPER_SAMPLING_GREEDY);
                             params.language = "ja";
 
-                            // 書き起こし実行 (内部で結果がログ出力されるはずです)
                             String result = whisper.fullTranscribe(params, samples);
 
                             if (result != null && !result.isEmpty()) {
@@ -102,7 +103,7 @@ public class WhisperRecognitionManager {
                         } catch (Exception e) {
                             LOGGER.error("Transcription error", e);
                         }
-                        audioBuffer.clear();
+                        audioBuffer.clear(); // 次の録音のためにクリア
                     }
                 }
             }
@@ -110,7 +111,6 @@ public class WhisperRecognitionManager {
         listeningThread.setDaemon(true);
         listeningThread.start();
     }
-
     public float[] bytesToFloats(byte[] bytes) {
         // 16bit(2bytes) で 1つの音の高さ(1sample)を表現しているので、長さは半分になる
         float[] floats = new float[bytes.length / 2];
