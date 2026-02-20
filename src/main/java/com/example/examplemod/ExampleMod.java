@@ -1,6 +1,7 @@
 package com.example.examplemod;
 
 import com.example.examplemod.item.ModItems;
+import com.example.examplemod.network.PacketHandler;
 import com.mojang.logging.LogUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.registries.Registries;
@@ -54,7 +55,7 @@ public class ExampleMod
     public ExampleMod(FMLJavaModLoadingContext context)
     {
         IEventBus modEventBus = context.getModEventBus();
-
+        PacketHandler.register();
         // アイテム登録
         ModItems.register(modEventBus);
         modEventBus.addListener(this::commonSetup);

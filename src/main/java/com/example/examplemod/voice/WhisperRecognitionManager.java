@@ -1,5 +1,7 @@
 package com.example.examplemod.voice;
 
+import com.example.examplemod.network.CastFireballPacket;
+import com.example.examplemod.network.PacketHandler;
 import com.mojang.logging.LogUtils;
 import org.slf4j.Logger;
 
@@ -86,19 +88,26 @@ public class WhisperRecognitionManager {
                             audioBuffer.add(s / 32768.0f);
                         }
                     }
-
+                    // 3秒以内に呪文言い終わらないと単語が切れてしまう
                     if (audioBuffer.size() >= 48000) {
                         float[] samples = new float[audioBuffer.size()];
                         for (int i = 0; i < audioBuffer.size(); i++) samples[i] = audioBuffer.get(i);
 
                         try {
                             WhisperFullParams.ByValue params = whisper.getFullDefaultParams(WhisperSamplingStrategy.WHISPER_SAMPLING_GREEDY);
-                            params.language = "ja";
-
+                            params.language = "en";
+                            // 文字起こし
                             String result = whisper.fullTranscribe(params, samples);
 
                             if (result != null && !result.isEmpty()) {
                                 LOGGER.info("Final Result: " + result);
+                                // 小文字修正
+                                String query = result.toLowerCase();
+
+                                if (query.contains("fire")) {
+                                    LOGGER.info("★magic: fire detected!");
+                                    PacketHandler.INSTANCE.sendToServer(new CastFireballPacket());
+                                }
                             }
                         } catch (Exception e) {
                             LOGGER.error("Transcription error", e);
