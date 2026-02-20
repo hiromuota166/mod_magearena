@@ -90,30 +90,7 @@ public class WhisperRecognitionManager {
                     }
                     // 3秒以内に呪文言い終わらないと単語が切れてしまう
                     if (audioBuffer.size() >= 48000) {
-                        float[] samples = new float[audioBuffer.size()];
-                        for (int i = 0; i < audioBuffer.size(); i++) samples[i] = audioBuffer.get(i);
-
-                        try {
-                            WhisperFullParams.ByValue params = whisper.getFullDefaultParams(WhisperSamplingStrategy.WHISPER_SAMPLING_GREEDY);
-                            params.initial_prompt = "Fire";
-                            params.language = "en";
-                            // 文字起こし
-                            String result = whisper.fullTranscribe(params, samples);
-
-                            if (result != null && !result.isEmpty()) {
-                                LOGGER.info("Final Result: " + result);
-                                // 小文字修正
-                                String query = result.toLowerCase();
-
-                                if (query.contains("fire")) {
-                                    LOGGER.info("★magic: fire detected!");
-                                    PacketHandler.INSTANCE.sendToServer(new CastFireballPacket());
-                                }
-                            }
-                        } catch (Exception e) {
-                            LOGGER.error("Transcription error", e);
-                        }
-                        audioBuffer.clear(); // 次の録音のためにクリア
+                        performTranscription(audioBuffer);
                     }
                 }
             }
@@ -132,5 +109,32 @@ public class WhisperRecognitionManager {
             floats[i] = s / 32768.0f;
         }
         return floats;
+    }
+    public static void performTranscription(List<Float> audioBuffer) {
+        if (audioBuffer.isEmpty()) return;
+        float[] samples = new float[audioBuffer.size()];
+        for (int i = 0; i < audioBuffer.size(); i++) samples[i] = audioBuffer.get(i);
+
+        try {
+            WhisperFullParams.ByValue params = whisper.getFullDefaultParams(WhisperSamplingStrategy.WHISPER_SAMPLING_GREEDY);
+            params.initial_prompt = "Fire";
+            params.language = "en";
+            // 文字起こし
+            String result = whisper.fullTranscribe(params, samples);
+
+            if (result != null && !result.isEmpty()) {
+                LOGGER.info("Final Result: " + result);
+                // 小文字修正
+                String query = result.toLowerCase();
+
+                if (query.contains("fire")) {
+                    LOGGER.info("★magic: fire detected!");
+                    PacketHandler.INSTANCE.sendToServer(new CastFireballPacket());
+                }
+            }
+        } catch (Exception e) {
+            LOGGER.error("Transcription error", e);
+        }
+        audioBuffer.clear();
     }
 }
