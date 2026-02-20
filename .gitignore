@@ -26,3 +26,6 @@ forge*changelog.txt
 
 libs/*.dylib
 models/*.bin
+
+.DS_Store
+src/.DS_Store
