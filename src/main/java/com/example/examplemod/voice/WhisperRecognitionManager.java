@@ -95,6 +95,7 @@ public class WhisperRecognitionManager {
 
                         try {
                             WhisperFullParams.ByValue params = whisper.getFullDefaultParams(WhisperSamplingStrategy.WHISPER_SAMPLING_GREEDY);
+                            params.initial_prompt = "Fire";
                             params.language = "en";
                             // 文字起こし
                             String result = whisper.fullTranscribe(params, samples);
