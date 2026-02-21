@@ -70,6 +70,8 @@ public class WhisperRecognitionManager {
             List<Float> audioBuffer = new ArrayList<>();
             byte[] readBuffer = new byte[4096];
 
+            int silentSamples = 0;
+
             while (isListening) {
                 int nbytes = microphone.read(readBuffer, 0, readBuffer.length);
                 if (nbytes > 0) {
@@ -82,15 +84,21 @@ public class WhisperRecognitionManager {
                     for (short s : tempSamples) sum += s * s;
                     double rms = Math.sqrt(sum / sampleCount);
 
-                    // しきい値を超えた時だけ追加
                     if (rms > 300) {
-                        for (short s : tempSamples) {
-                            audioBuffer.add(s / 32768.0f);
+                        // 喋っている間はバッファに溜める
+                        for (short s : tempSamples) audioBuffer.add(s / 32768.0f);
+                        silentSamples = 0;
+                    } else {
+                        // 静かな時
+                        if (!audioBuffer.isEmpty()) {
+                            silentSamples += sampleCount;
+                            // 0.3秒以上静かだったら終了
+                            if (silentSamples > 4800) {
+                                performTranscription(audioBuffer);
+                                audioBuffer.clear();
+                                silentSamples = 0;
+                            }
                         }
-                    }
-                    // 3秒以内に呪文言い終わらないと単語が切れてしまう
-                    if (audioBuffer.size() >= 48000) {
-                        performTranscription(audioBuffer);
                     }
                 }
             }
