@@ -1,5 +1,7 @@
 package com.example.examplemod.voice;
 
+import com.example.examplemod.network.CastFireballPacket;
+import com.example.examplemod.network.PacketHandler;
 import com.mojang.logging.LogUtils;
 import org.slf4j.Logger;
 
@@ -68,6 +70,8 @@ public class WhisperRecognitionManager {
             List<Float> audioBuffer = new ArrayList<>();
             byte[] readBuffer = new byte[4096];
 
+            int silentSamples = 0;
+
             while (isListening) {
                 int nbytes = microphone.read(readBuffer, 0, readBuffer.length);
                 if (nbytes > 0) {
@@ -80,30 +84,21 @@ public class WhisperRecognitionManager {
                     for (short s : tempSamples) sum += s * s;
                     double rms = Math.sqrt(sum / sampleCount);
 
-                    // しきい値を超えた時だけ追加
                     if (rms > 300) {
-                        for (short s : tempSamples) {
-                            audioBuffer.add(s / 32768.0f);
-                        }
-                    }
-
-                    if (audioBuffer.size() >= 48000) {
-                        float[] samples = new float[audioBuffer.size()];
-                        for (int i = 0; i < audioBuffer.size(); i++) samples[i] = audioBuffer.get(i);
-
-                        try {
-                            WhisperFullParams.ByValue params = whisper.getFullDefaultParams(WhisperSamplingStrategy.WHISPER_SAMPLING_GREEDY);
-                            params.language = "ja";
-
-                            String result = whisper.fullTranscribe(params, samples);
-
-                            if (result != null && !result.isEmpty()) {
-                                LOGGER.info("Final Result: " + result);
+                        // 喋っている間はバッファに溜める
+                        for (short s : tempSamples) audioBuffer.add(s / 32768.0f);
+                        silentSamples = 0;
+                    } else {
+                        // 静かな時
+                        if (!audioBuffer.isEmpty()) {
+                            silentSamples += sampleCount;
+                            // 0.3秒以上静かだったら終了
+                            if (silentSamples > 4800) {
+                                performTranscription(audioBuffer);
+                                audioBuffer.clear();
+                                silentSamples = 0;
                             }
-                        } catch (Exception e) {
-                            LOGGER.error("Transcription error", e);
                         }
-                        audioBuffer.clear(); // 次の録音のためにクリア
                     }
                 }
             }
@@ -122,5 +117,32 @@ public class WhisperRecognitionManager {
             floats[i] = s / 32768.0f;
         }
         return floats;
+    }
+    public static void performTranscription(List<Float> audioBuffer) {
+        if (audioBuffer.isEmpty()) return;
+        float[] samples = new float[audioBuffer.size()];
+        for (int i = 0; i < audioBuffer.size(); i++) samples[i] = audioBuffer.get(i);
+
+        try {
+            WhisperFullParams.ByValue params = whisper.getFullDefaultParams(WhisperSamplingStrategy.WHISPER_SAMPLING_GREEDY);
+            params.initial_prompt = "Fire";
+            params.language = "en";
+            // 文字起こし
+            String result = whisper.fullTranscribe(params, samples);
+
+            if (result != null && !result.isEmpty()) {
+                LOGGER.info("Final Result: " + result);
+                // 小文字修正
+                String query = result.toLowerCase();
+
+                if (query.contains("fire")) {
+                    LOGGER.info("★magic: fire detected!");
+                    PacketHandler.INSTANCE.sendToServer(new CastFireballPacket());
+                }
+            }
+        } catch (Exception e) {
+            LOGGER.error("Transcription error", e);
+        }
+        audioBuffer.clear();
     }
 }
