@@ -1,6 +1,7 @@
 package com.example.examplemod.voice;
 
 import com.example.examplemod.network.CastFireballPacket;
+import com.example.examplemod.network.CastSnowballPacket;
 import com.example.examplemod.network.PacketHandler;
 import com.mojang.logging.LogUtils;
 import org.slf4j.Logger;
@@ -125,7 +126,7 @@ public class WhisperRecognitionManager {
 
         try {
             WhisperFullParams.ByValue params = whisper.getFullDefaultParams(WhisperSamplingStrategy.WHISPER_SAMPLING_GREEDY);
-            params.initial_prompt = "Fire";
+            params.initial_prompt = "Fire, snowball";
             params.language = "en";
             // 文字起こし
             String result = whisper.fullTranscribe(params, samples);
@@ -138,6 +139,11 @@ public class WhisperRecognitionManager {
                 if (query.contains("fire")) {
                     LOGGER.info("★magic: fire detected!");
                     PacketHandler.INSTANCE.sendToServer(new CastFireballPacket());
+                }
+
+                if (query.contains("snowball")) {
+                    LOGGER.info("★magic: snowball detected!");
+                    PacketHandler.INSTANCE.sendToServer(new CastSnowballPacket());
                 }
             }
         } catch (Exception e) {

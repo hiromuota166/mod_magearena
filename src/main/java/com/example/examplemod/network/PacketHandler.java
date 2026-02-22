@@ -21,6 +21,11 @@ public class PacketHandler {
                 CastFireballPacket::decode,
                 CastFireballPacket::handle);
 
+        INSTANCE.registerMessage(id++, CastSnowballPacket.class,
+                CastSnowballPacket::encode,
+                CastSnowballPacket::decode,
+                CastSnowballPacket::handle);
+
         System.out.println("PacketHandler: チャンネル登録完了！");
     }
 }
