@@ -1,10 +1,8 @@
 package com.example.examplemod.network;
 
-import com.example.examplemod.item.FireWandItem;
 import com.example.examplemod.magic.MagicHelper;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.InteractionHand;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
