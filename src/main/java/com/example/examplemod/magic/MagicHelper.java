@@ -29,7 +29,9 @@ public class MagicHelper {
         player.serverLevel().addFreshEntity(projectile);
     }
     public static void castFireball(ServerPlayer player) {
-        LargeFireball fireball = new LargeFireball(player.serverLevel(), player, 0, 0, 0, 1);
+        Vec3 lookVec = player.getLookAngle();
+
+        LargeFireball fireball = new LargeFireball(player.serverLevel(), player, lookVec.x, lookVec.y, lookVec.z, 1);
         shoot(player, fireball, 1.0F);
     }
 
