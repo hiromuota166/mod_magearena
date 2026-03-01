@@ -1,6 +1,7 @@
 package com.example.examplemod.network;
 
 import com.example.examplemod.item.FireWandItem;
+import com.example.examplemod.magic.MagicHelper;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -22,7 +23,7 @@ public class CastFireballPacket {
             // サーバー側で実行される処理
             ServerPlayer player = ctx.get().getSender();
             if (player != null) {
-                FireWandItem.castFireball(player.level(), player, InteractionHand.MAIN_HAND);
+                MagicHelper.castFireball(player);
             }
         });
         ctx.get().setPacketHandled(true);
