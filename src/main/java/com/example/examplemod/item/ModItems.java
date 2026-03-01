@@ -18,7 +18,7 @@ public class ModItems {
 
     // 雪の杖
     public static final RegistryObject<Item> BONE_WAND = ITEMS.register("bone_wand",
-            () -> new BoneItem(new Item.Properties()));
+            () -> new SnowItem(new Item.Properties()));
 
     // 登録処理
     public static void register(IEventBus eventBus) {

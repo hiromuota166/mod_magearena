@@ -7,21 +7,21 @@ import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
-public class CastFireballPacket {
-    public CastFireballPacket() {}
+public class CastSnowballPacket {
+    public CastSnowballPacket() {}
 
-    public static void encode(CastFireballPacket msg, FriendlyByteBuf buffer) {}
+    public static void encode(CastSnowballPacket msg, FriendlyByteBuf buffer) {}
 
-    public static CastFireballPacket decode(FriendlyByteBuf buffer) {
-        return new CastFireballPacket();
+    public static CastSnowballPacket decode(FriendlyByteBuf buffer) {
+        return new CastSnowballPacket();
     }
 
-    public static void handle(CastFireballPacket msg, Supplier<NetworkEvent.Context> ctx) {
+    public static void handle(CastSnowballPacket msg, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             // サーバー側で実行される処理
             ServerPlayer player = ctx.get().getSender();
             if (player != null) {
-                MagicHelper.castFireball(player);
+                MagicHelper.castSnowball(player);
             }
         });
         ctx.get().setPacketHandled(true);
